@@ -21,3 +21,9 @@ databases, the GORM library has support for mysql/postgres/sqlite etc. We will b
 
 1. https://www.pingcap.com/article/building-robust-go-applications-with-gorm-best-practices/#:~:text=One%20of%20the%20most%20popular,design%20and%20comprehensive%20feature%20set.
 2. https://medium.com/@itskenzylimon/getting-started-on-golang-gorm-af49381caf3f
+
+For our usecase, we will avoid creating multiple directories and stick to a single directory (`models/`). We will be having a user model
+for both Ax and Px, and another model for appointments. For our usecase we will refference a list of appointments (one-to-many) for
+Px while this will stay empty for Ax. We will not be doing any transactional handeling and as such wont use transactions.
+
+After defining our schema we will need to have logic for registering users and logging in first

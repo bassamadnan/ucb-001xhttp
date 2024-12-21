@@ -3,6 +3,7 @@ module github.com/bassamadnan/ucb-001xhttp
 go 1.23.1
 
 require (
+	golang.org/x/crypto v0.31.0
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
 )

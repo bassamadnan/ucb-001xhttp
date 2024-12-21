@@ -1,0 +1,25 @@
+Users table created successfully
+Appointments table created successfully
+
+2024/12/22 05:15:19 [31;1m/home/bassam/Documents/unqueue/models/auth.go:41 [35;1mrecord not found
+[0m[33m[0.083ms] [34;1m[rows:0][0m SELECT * FROM `users` WHERE email = "prof@example.com" ORDER BY `users`.`id` LIMIT 1
+
+2024/12/22 05:15:19 [31;1m/home/bassam/Documents/unqueue/models/auth.go:41 [35;1mrecord not found
+[0m[33m[0.140ms] [34;1m[rows:0][0m SELECT * FROM `users` WHERE email = "student@example.com" ORDER BY `users`.`id` LIMIT 1
+Professor logged in successfully: Professor Smith
+Student logged in successfully: Student Jones
+Professor has 6 slots
+Appointment booked successfully
+Appointment with Professor Smith at 10:00
+
+Users table:
+ID: 1, Type: 1, Name: Professor Smith, Email: prof@example.com
+ID: 2, Type: 0, Name: Student Jones, Email: student@example.com
+
+Appointments table:
+ID: 1, UserID: 1, StudentID: 2, StartTime: 10, Available: false
+ID: 2, UserID: 1, StudentID: 0, StartTime: 11, Available: true
+ID: 3, UserID: 1, StudentID: 0, StartTime: 12, Available: true
+ID: 4, UserID: 1, StudentID: 0, StartTime: 14, Available: false
+ID: 5, UserID: 1, StudentID: 0, StartTime: 15, Available: true
+ID: 6, UserID: 1, StudentID: 0, StartTime: 16, Available: true
