@@ -36,3 +36,4 @@ we will be needing logical endpoints for
 4. endpoints for students -> (check slots for a prof via mail, GET), (book a slot for prof via mail, POST), (check own slots, GET)
 
 We start by hosting a server
+1. https://www.naukri.com/code360/library/gin-middleware

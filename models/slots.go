@@ -28,18 +28,37 @@ func GetAvailableSlots(db *gorm.DB, profID uint8) ([]Appointment, error) {
 	return slots, nil
 }
 
-// change the availability of the slot, allows professors to mark slots as busy/free
-func UpdateSlotAvailability(db *gorm.DB, profID uint8, slotID uint8, available bool) error {
+// allows students and professors to cancel appointments
+// returns error if user does not have permission, or if appointment does not exist
+func CancelAppointment(db *gorm.DB, userID uint8, startTime uint8, userType uint8, profEmail string) error {
 	var slot Appointment
-	result := db.Where("id = ? AND user_id = ?", slotID, profID).First(&slot)
-	if result.Error != nil {
-		return errors.New("slot not found or does not belong to professor")
+	var query *gorm.DB
+
+	// if student is cancelling, need prof ID to locate the slot
+	if userType == STUDENT_TYPE {
+		var prof User
+		result := db.Where("email = ? AND type = ?", profEmail, PROFESSOR_TYPE).First(&prof)
+		if result.Error != nil {
+			return errors.New("professor not found")
+		}
+		// locate slot under this prof, at this time, booked by this student
+		query = db.Where("user_id = ? AND start_time = ? AND student_id = ?",
+			prof.ID, startTime, userID)
+	} else {
+		// profs can cancel by their ID and time only
+		query = db.Where("user_id = ? AND start_time = ?",
+			userID, startTime)
 	}
 
-	slot.Availability = available
-	if available == false {
-		slot.StudentID = 0
+	result := query.First(&slot)
+	if result.Error != nil {
+		return errors.New("appointment not found")
 	}
+
+	// reset slot to available state
+	slot.Availability = true
+	slot.StudentID = 0
+
 	return db.Save(&slot).Error
 }
 
