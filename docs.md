@@ -27,3 +27,12 @@ for both Ax and Px, and another model for appointments. For our usecase we will 
 Px while this will stay empty for Ax. We will not be doing any transactional handeling and as such wont use transactions.
 
 After defining our schema we will need to have logic for registering users and logging in first
+
+With the database logic in place, we have to setup API end points which can call these database functionalities
+we will be needing logical endpoints for
+1. Authorization (login, register) POST methods
+2. Middleware , this can reduce lines from our database code where we don't have to check for user type
+3. endpoints for prof would be -> (check available/all slots, GET), (edit slot using start time, POST)
+4. endpoints for students -> (check slots for a prof via mail, GET), (book a slot for prof via mail, POST), (check own slots, GET)
+
+We start by hosting a server
