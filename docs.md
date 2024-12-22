@@ -37,3 +37,14 @@ we will be needing logical endpoints for
 
 We start by hosting a server
 1. https://www.naukri.com/code360/library/gin-middleware
+
+Gin apparently allows you to define incoming JSON  requests, which is great much like gRPC, though this has its own disadvantage.
+For maintaining sessions, we will be using cookies and not JWT for simplicity as this app will only run while server is on. We won't
+be handling server restart logic.
+
+The idea here becomes to use sessions which will act as a context and enable handling different clients.
+Gin provides handlers which can be used as callbacks when a route is accessed, the signature of these handlers are in `*gin.context`
+This becomes really useful and helps maintain code quality and we wont have to pass the database around.
+
+To use sessions, add a store in the middleware which the handlers can access using Default(), this session will be set in clinet
+(browser or Postman) but otherwise for a custom client this should be extracted and sent back with future headers.
