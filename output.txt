@@ -23,3 +23,25 @@ ID: 3, UserID: 1, StudentID: 0, StartTime: 12, Available: true
 ID: 4, UserID: 1, StudentID: 0, StartTime: 14, Available: false
 ID: 5, UserID: 1, StudentID: 0, StartTime: 15, Available: true
 ID: 6, UserID: 1, StudentID: 0, StartTime: 16, Available: true
+
+
+{
+    "email": "A1@test.com",
+    "password": "test123",
+    "name": "A1",
+    "type": 0
+}
+
+{
+    "email": "A2@test.com",
+    "password": "test123",
+    "name": "A2",
+    "type": 0
+}
+
+{
+    "email": "P1@test.com",
+    "password": "test123",
+    "name": "P1",
+    "type": 1
+}

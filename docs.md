@@ -53,3 +53,12 @@ To set up the routing logic, we will use the `routers/` directory, we will not b
 
 Next we will create seperate handlers for profs and the students in the `handlers/` directory. Further we should only expose those endpoints
 which are necessary via the middleware.
+
+
+Finally, we have to write test cases. While I was able to test these endpoints on Postman, I will try to use Go tests module for writing tests
+I expect the header to be stored to use sessions properly while making requests. In Go, the tests directory has to end file names wiht
+`_test.go` and the function signature for entry point is TestMain(m *testing.M) which is then called using `m.Run()`
+
+This invokes all the functions having `t *testing.T` as their argument, inside this function we will be putting examples from our
+Postman, the tricky part here would be to set the right cookies for the right request. To this end we will be storing each of them
+`var A1Cookie, A2Cookie, P1Cookie string` which come into play right after the registration.
