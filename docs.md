@@ -48,3 +48,8 @@ This becomes really useful and helps maintain code quality and we wont have to p
 
 To use sessions, add a store in the middleware which the handlers can access using Default(), this session will be set in clinet
 (browser or Postman) but otherwise for a custom client this should be extracted and sent back with future headers.
+
+To set up the routing logic, we will use the `routers/` directory, we will not be versioning our API's for this toy project.
+
+Next we will create seperate handlers for profs and the students in the `handlers/` directory. Further we should only expose those endpoints
+which are necessary via the middleware.

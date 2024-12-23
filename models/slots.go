@@ -9,9 +9,15 @@ import (
 // the logic for checking valid student/prof may change later if it can be handled via Gin
 
 // all slots of a professor, should show which ones are available (or not) later on
-func GetProfessorSlots(db *gorm.DB, profID uint8) ([]Appointment, error) {
+func GetProfessorSlots(db *gorm.DB, profEmail string) ([]Appointment, error) {
+	var prof User
+	result := db.Where("email = ? AND type = ?", profEmail, PROFESSOR_TYPE).First(&prof)
+	if result.Error != nil {
+		return nil, errors.New("professor not found")
+	}
+
 	var slots []Appointment
-	result := db.Where("user_id = ?", profID).Find(&slots)
+	result = db.Where("user_id = ?", prof.ID).Find(&slots)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -19,9 +25,15 @@ func GetProfessorSlots(db *gorm.DB, profID uint8) ([]Appointment, error) {
 }
 
 // stand alone for available slots only, may not need
-func GetAvailableSlots(db *gorm.DB, profID uint8) ([]Appointment, error) {
+func GetAvailableSlots(db *gorm.DB, profEmail string) ([]Appointment, error) {
+	var prof User
+	result := db.Where("email = ? AND type = ?", profEmail, PROFESSOR_TYPE).First(&prof)
+	if result.Error != nil {
+		return nil, errors.New("professor not found")
+	}
+
 	var slots []Appointment
-	result := db.Where("user_id = ? AND availability = ?", profID, true).Find(&slots)
+	result = db.Where("user_id = ? AND availability = ?", prof.ID, true).Find(&slots)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -30,7 +42,7 @@ func GetAvailableSlots(db *gorm.DB, profID uint8) ([]Appointment, error) {
 
 // allows students and professors to cancel appointments
 // returns error if user does not have permission, or if appointment does not exist
-func CancelAppointment(db *gorm.DB, userID uint8, startTime uint8, userType uint8, profEmail string) error {
+func CancelAppointment(db *gorm.DB, userEmail string, startTime uint8, userType uint8, profEmail string) error {
 	var slot Appointment
 	var query *gorm.DB
 
@@ -41,18 +53,30 @@ func CancelAppointment(db *gorm.DB, userID uint8, startTime uint8, userType uint
 		if result.Error != nil {
 			return errors.New("professor not found")
 		}
-		// locate slot under this prof, at this time, booked by this student
-		query = db.Where("user_id = ? AND start_time = ? AND student_id = ?",
-			prof.ID, startTime, userID)
+
+		var student User
+		result = db.Where("email = ? AND type = ?", userEmail, STUDENT_TYPE).First(&student)
+		if result.Error != nil {
+			return errors.New("student not found")
+		}
+
+		// locate slot under this prof, at this time, booked by this student, and must be booked (not available)
+		query = db.Where("user_id = ? AND start_time = ? AND student_id = ? AND availability = ?",
+			prof.ID, startTime, student.ID, false)
 	} else {
-		// profs can cancel by their ID and time only
-		query = db.Where("user_id = ? AND start_time = ?",
-			userID, startTime)
+		var prof User
+		result := db.Where("email = ? AND type = ?", userEmail, PROFESSOR_TYPE).First(&prof)
+		if result.Error != nil {
+			return errors.New("professor not found")
+		}
+		// profs can cancel by their ID and time only, but slot must be booked
+		query = db.Where("user_id = ? AND start_time = ? AND availability = ?",
+			prof.ID, startTime, false)
 	}
 
 	result := query.First(&slot)
 	if result.Error != nil {
-		return errors.New("appointment not found")
+		return errors.New("no booked appointment found")
 	}
 
 	// reset slot to available state
@@ -62,9 +86,28 @@ func CancelAppointment(db *gorm.DB, userID uint8, startTime uint8, userType uint
 	return db.Save(&slot).Error
 }
 
-func BookAppointment(db *gorm.DB, studentID, slotTime uint8, profMail string) error {
+// allow profs to update their availability (cancel appointments) may be a redundant endpoint
+// based the assumpiton that prof can declare busy before the slots are even booked
+func UpdateSlotAvailability(db *gorm.DB, profEmail string, startTime uint8, available bool) error {
+	var prof User
+	result := db.Where("email = ? AND type = ?", profEmail, PROFESSOR_TYPE).First(&prof)
+	if result.Error != nil {
+		return errors.New("professor not found")
+	}
+
+	var slot Appointment
+	result = db.Where("user_id = ? AND start_time = ?", prof.ID, startTime).First(&slot)
+	if result.Error != nil {
+		return errors.New("slot not found")
+	}
+
+	slot.Availability = available
+	return db.Save(&slot).Error
+}
+
+func BookAppointment(db *gorm.DB, studentEmail string, slotTime uint8, profEmail string) error {
 	var student User
-	result := db.First(&student, studentID)
+	result := db.Where("email = ? AND type = ?", studentEmail, STUDENT_TYPE).First(&student)
 	if result.Error != nil {
 		return errors.New("student not found")
 	}
@@ -74,7 +117,7 @@ func BookAppointment(db *gorm.DB, studentID, slotTime uint8, profMail string) er
 	}
 
 	var prof User
-	result = db.Where("email = ? AND type = ?", profMail, PROFESSOR_TYPE).First(&prof)
+	result = db.Where("email = ? AND type = ?", profEmail, PROFESSOR_TYPE).First(&prof)
 	if result.Error != nil {
 		return errors.New("professor not found")
 	}
@@ -83,29 +126,59 @@ func BookAppointment(db *gorm.DB, studentID, slotTime uint8, profMail string) er
 	var slot Appointment
 	result = db.Where("user_id = ? AND start_time = ? AND availability = ?", prof.ID, slotTime, true).First(&slot)
 	if result.Error != nil {
+		// the prof exists but is unavailable
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return errors.New("slot not available")
+		}
 		return errors.New("professor not found")
 	}
 	slot.Availability = false
-	slot.StudentID = studentID
+	slot.StudentID = student.ID
 	return db.Save(&slot).Error
 }
 
-func GetStudentAppointments(db *gorm.DB, studentID uint8) ([]struct {
+func GetStudentAppointments(db *gorm.DB, studentEmail string) ([]struct {
 	StartTime uint8
 	ProfName  string
 }, error) {
+	var student User
+	result := db.Where("email = ? AND type = ?", studentEmail, STUDENT_TYPE).First(&student)
+	if result.Error != nil {
+		return nil, errors.New("student not found")
+	}
+
 	var appointments []struct {
 		StartTime uint8
 		ProfName  string
 	}
-	result := db.Table("appointments").
+	result = db.Table("appointments").
 		Select("appointments.start_time, users.name as prof_name").
 		Joins("JOIN users ON appointments.user_id = users.id").
-		Where("appointments.student_id = ? AND appointments.availability = ?", studentID, false).
+		Where("appointments.student_id = ? AND appointments.availability = ?", student.ID, false).
 		Scan(&appointments)
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return appointments, nil
+}
+
+// get all professors in the system
+func GetAllProfessors(db *gorm.DB) ([]struct {
+	Name  string
+	Email string
+}, error) {
+	var professors []struct {
+		Name  string
+		Email string
+	}
+	result := db.Table("users").
+		Select("name, email").
+		Where("type = ?", PROFESSOR_TYPE).
+		Scan(&professors)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return professors, nil
 }
